@@ -98,6 +98,7 @@ HOOK(calloc, HookType::Required);
 HOOK(cfree, HookType::Optional);
 #endif
 HOOK(realloc, HookType::Required);
+HOOK(reallocarray, HookType::Required);
 HOOK(posix_memalign, HookType::Optional);
 #if HAVE_VALLOC
 HOOK(valloc, HookType::Optional);
@@ -177,6 +178,7 @@ void init()
                        hooks::cfree.init();
 #endif
                        hooks::realloc.init();
+                       hooks::reallocarray.init();
                        hooks::posix_memalign.init();
 #if HAVE_VALLOC
                        hooks::valloc.init();
@@ -248,6 +250,21 @@ void* realloc(void* ptr, size_t size) LIBC_FUN_ATTRS
     return ret;
 }
 
+void* reallocarray(void* ptr, size_t nmemb, size_t size) LIBC_FUN_ATTRS
+{
+    if (!hooks::reallocarray) {
+        hooks::init();
+    }
+
+    void* ret = hooks::reallocarray(ptr, nmemb, size);
+
+    if (ret) {
+        heaptrack_realloc(ptr, nmemb * size, ret);
+    }
+
+    return ret;
+}
+
 void* calloc(size_t num, size_t size) LIBC_FUN_ATTRS
 {
     if (!hooks::calloc) {
@@ -313,6 +330,21 @@ void* aligned_alloc(size_t alignment, size_t size) LIBC_FUN_ATTRS
 }
 #endif
 
+void* memalign(size_t alignment, size_t size) LIBC_FUN_ATTRS
+{
+    if (!hooks::aligned_alloc) {
+        hooks::init();
+    }
+
+    void* ret = hooks::aligned_alloc(alignment, size);
+
+    if (ret) {
+        heaptrack_malloc(ret, size);
+    }
+
+    return ret;
+}
+
 #if HAVE_VALLOC
 void* valloc(size_t size) LIBC_FUN_ATTRS
 {
@@ -329,6 +361,25 @@ void* valloc(size_t size) LIBC_FUN_ATTRS
     return ret;
 }
 #endif
+
+void* pvalloc(size_t size) LIBC_FUN_ATTRS
+{
+    if (!hooks::valloc) {
+        hooks::init();
+    }
+
+    static size_t const pageSize = sysconf(_SC_PAGESIZE);
+    if (size % pageSize)
+        size = ((size / pageSize) + 1) * pageSize;
+
+    void* ret = hooks::valloc(size);
+
+    if (ret) {
+        heaptrack_malloc(ret, size);
+    }
+
+    return ret;
+}
 
 void* dlopen(const char* filename, int flag) LIBC_FUN_ATTRS
 {

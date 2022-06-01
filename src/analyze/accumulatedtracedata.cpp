@@ -368,14 +368,14 @@ bool AccumulatedTraceData::read(boost::iostreams::filtering_istream& in, const P
             bool temporary = false;
             if (fileVersion >= 1) {
                 if (!(reader >> allocationInfoIndex)) {
-                    cerr << "failed to parse line: " << reader.line() << endl;
+                    cerr << "failed to parse line5: " << reader.line() << endl;
                     continue;
                 }
                 temporary = lastAllocationPtr == allocationInfoIndex.index;
             } else { // backwards compatibility
                 uint64_t ptr = 0;
                 if (!(reader >> ptr)) {
-                    cerr << "failed to parse line: " << reader.line() << endl;
+                    cerr << "failed to parse line6: " << reader.line() << endl;
                     continue;
                 }
                 auto taken = pointers.takePointer(ptr);
@@ -408,7 +408,7 @@ bool AccumulatedTraceData::read(boost::iostreams::filtering_istream& in, const P
             AllocationInfo info;
             TraceIndex traceIndex;
             if (!(reader >> info.size) || !(reader >> traceIndex)) {
-                cerr << "failed to parse line: " << reader.line() << endl;
+                cerr << "failed to parse line7: " << reader.line() << endl;
                 continue;
             }
             info.allocationIndex = mapToAllocationIndex(traceIndex);
@@ -483,8 +483,10 @@ bool AccumulatedTraceData::read(boost::iostreams::filtering_istream& in, const P
             if (!suppression.empty()) {
                 suppressions.push_back({std::move(suppression), 0, 0});
             }
+        } else if (reader.mode() == 'M') {
+        } else if (reader.mode() == 'F') {
         } else {
-            cerr << "failed to parse line: " << reader.line() << endl;
+            cerr << "failed to parse line8: " << reader.line() << endl;
         }
     }
 

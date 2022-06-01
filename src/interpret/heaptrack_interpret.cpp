@@ -444,7 +444,7 @@ int main(int /*argc*/, char** /*argv*/)
                 const auto moduleIndex = data.intern(fileName, &internedString);
                 uintptr_t addressStart = 0;
                 if (!(reader >> addressStart)) {
-                    error_out << "failed to parse line: " << reader.line() << endl;
+                    error_out << "failed to parse line1: " << reader.line() << endl;
                     return 1;
                 }
                 auto state = data.findBacktraceState(internedString, addressStart);
@@ -458,7 +458,7 @@ int main(int /*argc*/, char** /*argv*/)
             uintptr_t instructionPointer = 0;
             size_t parentIndex = 0;
             if (!(reader >> instructionPointer) || !(reader >> parentIndex)) {
-                error_out << "failed to parse line: " << reader.line() << endl;
+                error_out << "failed to parse line2: " << reader.line() << endl;
                 return 1;
             }
             // ensure ip is encountered
@@ -472,7 +472,7 @@ int main(int /*argc*/, char** /*argv*/)
             TraceIndex traceId;
             uint64_t ptr = 0;
             if (!(reader >> size) || !(reader >> traceId.index) || !(reader >> ptr)) {
-                error_out << "failed to parse line: " << reader.line() << endl;
+                error_out << "failed to parse line3: " << reader.line() << endl;
                 continue;
             }
 
@@ -486,7 +486,7 @@ int main(int /*argc*/, char** /*argv*/)
         } else if (reader.mode() == '-') {
             uint64_t ptr = 0;
             if (!(reader >> ptr)) {
-                error_out << "failed to parse line: " << reader.line() << endl;
+                error_out << "failed to parse line4: " << reader.line() << endl;
                 continue;
             }
             bool temporary = lastPtr == ptr;

@@ -137,6 +137,21 @@ struct realloc
     }
 };
 
+struct reallocarray
+{
+    static constexpr auto name = "reallocarray";
+    static constexpr auto original = &::reallocarray;
+
+    static void* hook(void* ptr, size_t nmemb, size_t size) noexcept
+    {
+        auto inPtr = reinterpret_cast<uintptr_t>(ptr);
+        auto ret = original(ptr, nmemb, size);
+        heaptrack_realloc2(inPtr, nmemb * size, reinterpret_cast<uintptr_t>(ret));
+
+        return ret;
+    }
+};
+
 struct calloc
 {
     static constexpr auto name = "calloc";

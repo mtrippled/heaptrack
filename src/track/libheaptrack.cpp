@@ -506,6 +506,14 @@ public:
         }
     }
 
+    void handleMalloc2(void* ptr, size_t size)
+    {
+        if (!s_data || !s_data->out.canWrite()) {
+            return;
+        }
+        s_data->out.writeHexLine('M', reinterpret_cast<uintptr_t>(ptr), size);
+    }
+
     void handleMalloc(void* ptr, size_t size, const Trace& trace)
     {
         if (!s_data || !s_data->out.canWrite()) {
@@ -530,6 +538,14 @@ public:
 #endif
 
         s_data->out.writeHexLine('+', size, index, reinterpret_cast<uintptr_t>(ptr));
+    }
+
+    void handleFree2(void* ptr)
+    {
+        if (!s_data || !s_data->out.canWrite()) {
+            return;
+        }
+        s_data->out.writeHexLine('F', reinterpret_cast<uintptr_t>(ptr));
     }
 
     void handleFree(void* ptr)
@@ -783,14 +799,15 @@ static void heaptrack_realloc_impl(void* ptr_in, size_t size, void* ptr_out)
 
         debugLog<VeryVerboseOutput>("heaptrack_realloc(%p, %zu, %p)", ptr_in, size, ptr_out);
 
-        Trace trace;
-        trace.fill(2 + HEAPTRACK_DEBUG_BUILD * 3);
+//        Trace trace;
+//        trace.fill(2 + HEAPTRACK_DEBUG_BUILD * 3);
 
         HeapTrack heaptrack(guard);
         if (ptr_in) {
-            heaptrack.handleFree(ptr_in);
+            heaptrack.handleFree2(ptr_in);
         }
-        heaptrack.handleMalloc(ptr_out, size, trace);
+        heaptrack.handleMalloc2(ptr_out, size);
+//        heaptrack.handleMalloc(ptr_out, size, trace);
     }
 }
 
@@ -844,8 +861,9 @@ void heaptrack_malloc(void* ptr, size_t size)
         Trace trace;
         trace.fill(2 + HEAPTRACK_DEBUG_BUILD * 2);
 
-        HeapTrack heaptrack(guard);
-        heaptrack.handleMalloc(ptr, size, trace);
+        HeapTrack(guard).handleMalloc2(ptr, size);
+//        HeapTrack heaptrack(guard);
+//        heaptrack.handleMalloc(ptr, size, trace);
     }
 }
 
@@ -857,7 +875,7 @@ void heaptrack_free(void* ptr)
         debugLog<VeryVerboseOutput>("heaptrack_free(%p)", ptr);
 
         HeapTrack heaptrack(guard);
-        heaptrack.handleFree(ptr);
+        heaptrack.handleFree2(ptr);
     }
 }
 
