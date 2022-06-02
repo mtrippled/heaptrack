@@ -39,6 +39,10 @@ void heaptrack_invalidate_module_cache();
 typedef void (*heaptrack_warning_callback_t)(FILE*);
 void heaptrack_warning(heaptrack_warning_callback_t callback);
 
+void heaptrack_mmap(void* ptr, size_t length, unsigned int shared);
+void heaptrack_munmap(void* ptr, size_t length);
+void heaptrack_mremap(void* old_ptr, size_t old_length, void* new_ptr, size_t new_length);
+
 #ifdef __cplusplus
 }
 #endif

@@ -7,14 +7,18 @@
 #include "libheaptrack.h"
 #include "util/config.h"
 
+#include <cstdarg>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
 #include <dlfcn.h>
+#include <sys/mman.h>
 #include <unistd.h>
 
 #include <atomic>
 #include <type_traits>
+
+#include <iostream>
 
 using namespace std;
 
@@ -192,6 +196,7 @@ void init()
                        hooks::mi_calloc.init();
                        hooks::mi_realloc.init();
                        hooks::mi_free.init();
+
 
                        // cleanup environment to prevent tracing of child apps
                        unsetenv("LD_PRELOAD");
@@ -482,4 +487,46 @@ void mi_free(void* ptr) LIBC_FUN_ATTRS
 
     hooks::mi_free(ptr);
 }
+
+void* mmap(void *addr, size_t length, int prot, int flags,
+           int fd, off_t offset)
+{
+    typedef void* (*mmap_t)(void*, size_t, int, int, int, off_t);
+    static mmap_t original_mmap = (mmap_t)dlsym(RTLD_NEXT, "mmap");
+    void* ret = original_mmap(addr, length, prot, flags, fd, offset);
+    if (flags & MAP_ANONYMOUS && ret != MAP_FAILED)
+        heaptrack_mmap(ret, length, flags & MAP_SHARED);
+    return ret;
+}
+
+int munmap(void *addr, size_t length)
+{
+    typedef int (*munmap_t)(void*, size_t);
+    static munmap_t original_munmap = (munmap_t)dlsym(RTLD_NEXT, "munmap");
+    int ret = original_munmap(addr, length);
+    if (!ret)
+        heaptrack_munmap(addr, length);
+    return ret;
+}
+
+void *mremap(void *old_address, size_t old_size,
+             size_t new_size, int flags, ... /* void *new_address */)
+{
+    void* new_address = nullptr;
+    if (flags & MREMAP_FIXED)
+    {
+        va_list ap;
+        va_start(ap, flags);
+        new_address = va_arg(ap, void*);
+        va_end(ap);
+    }
+    typedef void* (*mremap_t)(void*, size_t, size_t, int, ...);
+    static mremap_t original_mremap = (mremap_t)dlsym(RTLD_NEXT, "mremap");
+    void* ret = original_mremap(old_address, old_size, new_size, flags, new_address);
+    if (ret != MAP_FAILED)
+        heaptrack_mremap(old_address, old_size, ret, new_size);
+
+    return ret;
+}
+
 }

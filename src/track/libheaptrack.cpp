@@ -563,6 +563,28 @@ public:
         s_data->out.writeHexLine('-', reinterpret_cast<uintptr_t>(ptr));
     }
 
+    void handleMmap(void* ptr, size_t size, unsigned int shared)
+    {
+        if (!s_data || !s_data->out.canWrite())
+            return;
+        s_data->out.writeHexLine('N', reinterpret_cast<uintptr_t>(ptr), size, shared);
+    }
+
+    void handleMunmap(void* ptr, size_t size)
+    {
+        if (!s_data || !s_data->out.canWrite())
+            return;
+        s_data->out.writeHexLine('U', reinterpret_cast<uintptr_t>(ptr), size);
+    }
+
+    void handleRemap(void* old_ptr, size_t old_length, void* new_ptr, size_t new_length)
+    {
+        if (!s_data || !s_data->out.canWrite())
+            return;
+        s_data->out.writeHexLine('Y', reinterpret_cast<uintptr_t>(old_ptr), old_length,
+                                 reinterpret_cast<uintptr_t>(new_ptr), new_length);
+    }
+
     static bool isPaused()
     {
         return s_paused;
@@ -905,4 +927,35 @@ void heaptrack_warning(heaptrack_warning_callback_t callback)
 
     debugLog<WarningOutput>(callback);
 }
+
+void heaptrack_mmap(void* ptr, size_t length, unsigned int shared)
+{
+    if (!HeapTrack::isPaused() && ptr && !RecursionGuard::isActive) {
+        RecursionGuard guard;
+
+        HeapTrack heaptrack(guard);
+        heaptrack.handleMmap(ptr, length, shared);
+    }
+}
+
+void heaptrack_munmap(void* ptr, size_t length)
+{
+    if (!HeapTrack::isPaused() && ptr && !RecursionGuard::isActive) {
+        RecursionGuard guard;
+
+        HeapTrack heaptrack(guard);
+        heaptrack.handleMunmap(ptr, length);
+    }
+}
+
+void heaptrack_mremap(void* old_ptr, size_t old_length, void* new_ptr, size_t new_length)
+{
+    if (!HeapTrack::isPaused() && new_ptr && !RecursionGuard::isActive) {
+        RecursionGuard guard;
+
+        HeapTrack heaptrack(guard);
+        heaptrack.handleRemap(old_ptr, old_length, new_ptr, new_length);
+    }
+}
+
 }

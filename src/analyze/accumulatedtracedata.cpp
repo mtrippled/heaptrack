@@ -483,8 +483,9 @@ bool AccumulatedTraceData::read(boost::iostreams::filtering_istream& in, const P
             if (!suppression.empty()) {
                 suppressions.push_back({std::move(suppression), 0, 0});
             }
-        } else if (reader.mode() == 'M') {
-        } else if (reader.mode() == 'F') {
+        } else if (reader.mode() == 'M' || reader.mode() == 'F'
+                   || reader.mode() == 'N' || reader.mode() == 'U'
+                   || reader.mode() == 'Y') {
         } else {
             cerr << "failed to parse line8: " << reader.line() << endl;
         }
